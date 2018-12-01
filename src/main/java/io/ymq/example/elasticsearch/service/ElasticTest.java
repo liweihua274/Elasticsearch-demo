@@ -41,41 +41,48 @@ public class ElasticTest {
     @RequestMapping("/batchInsert")
     public String hello1() {
         long start = System.currentTimeMillis();
-        BulkRequestBuilder bulkRequest = transportClient.prepareBulk();
-        try {
-            for (int i = 6000000; i < 6500000; i++) {
-                bulkRequest.add(transportClient.prepareIndex("adang1", "test1", String.valueOf(i))
-                        .setSource(XContentFactory.jsonBuilder()
-                                .startObject()
-                                .field("user", "lzq")
-                                .field("postDate", new Date())
-                                .field("message", "trying out Elasticsearch")
-                                .field("sendDate", "2018-11-1" + String.valueOf(i % 8))
-                                .field("msg", "你好李四")
-                                .field("account", 1 + i)
-                                .field("memberId", "13636993622121" + String.valueOf(i % 8))
-                                .field("mobileNo", "13636993695")
-                                .field("billno", "b" + i)
-                                .endObject()
-                        )
-                );
-                System.out.println("当前位置："+ i);
+        for (int a = 0; a <70; a++) {
+            BulkRequestBuilder bulkRequest = transportClient.prepareBulk();
+            try {
+                for (int i = 30500000 + a*1000000; i < 30500000 + (a+1)*1000000; i++) {
+                    bulkRequest.add(transportClient.prepareIndex("adang1", "test1", String.valueOf(i))
+                            .setSource(XContentFactory.jsonBuilder()
+                                    .startObject()
+                                    .field("user", "lzq")
+                                    .field("postDate", new Date())
+                                    .field("message", "trying out Elasticsearch")
+                                    .field("sendDate", "2018-12-1" + String.valueOf(i % 8))
+                                    .field("msg", "你好李四")
+                                    .field("account", 1 + i)
+                                    .field("memberId", "13636993622121" + String.valueOf(i % 8))
+                                    .field("mobileNo", "13636993695")
+                                    .field("billno", "b" + i)
+                                    .endObject()
+                            )
+                    );
+                    System.out.println("当前位置：" + i);
 
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
             }
 
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
 
-
-        BulkResponse bulkResponse = bulkRequest.get();
-        if (bulkResponse.hasFailures()) {
-            System.out.println("failures..............:" + bulkResponse.buildFailureMessage()
-            );
+            BulkResponse bulkResponse = bulkRequest.get();
+            if (bulkResponse.hasFailures()) {
+                System.out.println("failures..............:" + bulkResponse.buildFailureMessage()
+                );
+            }
+            long res = System.currentTimeMillis();
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            System.out.println("【会员异常积分】统计结束，耗时 " + String.valueOf(res - start) + " 毫秒");
+            System.out.println("结束");
         }
-        long res = System.currentTimeMillis();
-        System.out.println("【会员异常积分】统计结束，耗时 "+ String.valueOf(res - start)+" 毫秒");
-        System.out.println("结束");
         return "hello";
     }
 
@@ -83,33 +90,53 @@ public class ElasticTest {
 
     @RequestMapping("/search")
     public String search() {
-        long start = System.currentTimeMillis();
-        GetResponse getResponse = transportClient.prepareGet("adang1", "test1", "300000").get();
-        System.out.println("索引库的数据:" + getResponse.getSourceAsString());
-        long res = System.currentTimeMillis();
-        System.out.println("【会员异常积分】统计结束，耗时 "+ String.valueOf(res - start)+" 毫秒");
+        for (int j=0; j<12; j++) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    for (int i = 2000000; i < 2000100; i++) {
+                        long start = System.currentTimeMillis();
+                        GetResponse getResponse = transportClient.prepareGet("adang1", "test1", String.valueOf(i)).get();
+                        System.out.println("索引库的数据:" + getResponse.getSourceAsString());
+                        long res = System.currentTimeMillis();
+                        System.out.println("【会员异常积分】统计结束，耗时 " + String.valueOf(res - start) + " 毫秒");
+                    }
+                }
+            }).start();
+        }
         return "";
     }
 
     @RequestMapping("/searchBatch")
     public String searchBatch() {
-        long start = System.currentTimeMillis();
-       // RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery("billno").gte("b109947");
+        for (int j=0; j<12; j++) {
 
-        QueryBuilder qb=QueryBuilders.boolQuery().must(QueryBuilders.termQuery("memberId","136369936221212")).must(QueryBuilders.termQuery("sendDate","2018-11-12")) ;
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        for (int i = 1; i < 10; i++) {
+                            long start = System.currentTimeMillis();
+                            // RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery("billno").gte("b109947");
 
-        //QueryBuilder s = QueryBuilders.boolQuery().must(rangeQueryBuilder);//.must(qb5);
-        SearchRequestBuilder sv = transportClient.prepareSearch("adang1").setTypes("test1").setQuery(qb).setFrom(0)
-                .setSize(100);
-        System.out.println(sv.toString());
-        SearchResponse response = sv.get();
-        SearchHits searchHits = response.getHits();
-        for (SearchHit hit : searchHits.getHits()) {
-            System.out.println(hit.getSourceAsString());
+                            QueryBuilder qb = QueryBuilders.boolQuery().must(QueryBuilders.termQuery("memberId", "13636993622121" + i)).must(QueryBuilders.termQuery("sendDate", "2018-11-1" + i));
 
-        }
-        long res = System.currentTimeMillis();
-        System.out.println("【会员异常积分】统计结束，耗时 "+ String.valueOf(res - start)+" 毫秒");
+                            //QueryBuilder s = QueryBuilders.boolQuery().must(rangeQueryBuilder);//.must(qb5);
+                            SearchRequestBuilder sv = transportClient.prepareSearch("adang1").setTypes("test1").setQuery(qb).setFrom(0)
+                                    .setSize(100);
+                            System.out.println(sv.toString());
+                            SearchResponse response = sv.get();
+                            SearchHits searchHits = response.getHits();
+                            //for (SearchHit hit : searchHits.getHits()) {
+                            System.out.println(searchHits.totalHits);
+
+                            //}
+                            long res = System.currentTimeMillis();
+                            System.out.println("【会员异常积分】统计结束，耗时 " + String.valueOf(res - start) + " 毫秒");
+                        }
+                    }
+                }).start();
+            }
+
         return "finish";
     }
 
@@ -117,23 +144,29 @@ public class ElasticTest {
     @RequestMapping("/searchBatch1")
     //统计范围
     public String searchBatch1() {
-        long start = System.currentTimeMillis();
-        AggregationBuilder termsBuilder = AggregationBuilders.count("ageCount").field("account");
+        for (int j=0; j<12; j++) {
 
-        RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery("account").from(5083,true).to(6000,true);
-        QueryBuilder s=QueryBuilders.boolQuery().must(rangeQueryBuilder);//.must(qb5);
-        SearchRequestBuilder sv=transportClient.prepareSearch("adang1").setTypes("test1").setQuery(s).setFrom(0).setSize(1000).addAggregation(termsBuilder);
-        System.out.println(sv.toString());
-        SearchResponse response=  sv.get();
-        SearchHits searchHits =  response.getHits();
-        for(SearchHit hit:searchHits.getHits()){
-            System.out.println(hit.getSourceAsString());
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    long start = System.currentTimeMillis();
+                    AggregationBuilder termsBuilder = AggregationBuilders.count("ageCount").field("account");
+
+                    RangeQueryBuilder rangeQueryBuilder = QueryBuilders.rangeQuery("account").from(70830000, true).to(80000000, true);
+                    QueryBuilder s = QueryBuilders.boolQuery().must(rangeQueryBuilder);//.must(qb5);
+                    SearchRequestBuilder sv = transportClient.prepareSearch("adang1").setTypes("test1").setQuery(s).setFrom(0).setSize(1000).addAggregation(termsBuilder);
+                    System.out.println(sv.toString());
+                    SearchResponse response = sv.get();
+                    SearchHits searchHits = response.getHits();
+                    System.out.println(searchHits.totalHits);
+                    ValueCount valueCount = response.getAggregations().get("ageCount");
+                    long value = valueCount.getValue();
+                    long res = System.currentTimeMillis();
+                    System.out.println("【会员异常积分】统计结束，耗时 " + String.valueOf(res - start) + " 毫秒");
+                }
+            }).start();
         }
-        ValueCount valueCount= response.getAggregations().get("ageCount");
-        long value=valueCount.getValue();
-        long res = System.currentTimeMillis();
-        System.out.println("【会员异常积分】统计结束，耗时 "+ String.valueOf(res - start)+" 毫秒");
-        return String.valueOf(value);
+        return null;
 
     }
 
@@ -172,6 +205,8 @@ public class ElasticTest {
         return "finish";
 
     }
+
+
 
 
 
